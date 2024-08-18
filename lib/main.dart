@@ -1,6 +1,9 @@
-import 'package:autismcompanionsupport/firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:autismcompanionsupport/constants/routes.dart';
+import 'package:autismcompanionsupport/services/auth/auth_service.dart';
+import 'package:autismcompanionsupport/views/dashboard_view.dart';
+import 'package:autismcompanionsupport/views/login_view.dart';
+import 'package:autismcompanionsupport/views/register_view.dart';
+import 'package:autismcompanionsupport/views/verify_email_view.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -12,38 +15,42 @@ void main() {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: const HomePage(),
+      routes: {
+        loginRoute: (context) => const LoginView(),
+        registerRoute: (context) => const RegisterView(),
+        dashboardRoute: (context) => const DashboardView(),
+        verifyEmailRoute: (context) => const VerifyEmailView(),
+      }
     ),
   );
 }
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-      ),
-      body: FutureBuilder(
-        future: Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        ),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.done:
-              final user = FirebaseAuth.instance.currentUser;
-              if(user?.emailVerified ?? false) {
-                print('you are verified');
-              } else {
-                print('you need to verify your email first');
+    return FutureBuilder(
+            future: AuthService.firebase().initialize(),
+            builder: (context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.done:
+                  final user = AuthService.firebase().currentUser;
+                  if(user != null) {
+                    if(user.isEmailVerified) {
+                      return const DashboardView();
+                    } else {
+                      return const VerifyEmailView();
+                    }
+                  } else {
+                    return const LoginView();
+                  }
+                default:
+                  return const CircularProgressIndicator();
               }
-              return const Text('Done');
-            default:
-              return const Text('Loading...');
-          }
-        },
-      ),
-    );
+            },
+          );
   }
-
 }
+
