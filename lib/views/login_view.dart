@@ -62,24 +62,28 @@ class _LoginViewState extends State<LoginView> {
                         email: email, 
                         password: password,
                       );
-                      final user = await AuthService.firebase().currentUser;
+                      final user = AuthService.firebase().currentUser;
                       if(user?.isEmailVerified ?? false) {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          dashboardRoute, 
-                          (route) => false
-                        );
+                        if(context.mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            dashboardRoute, 
+                            (route) => false
+                          );
+                        }
                       } else {
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          verifyEmailRoute, 
-                          (route) => false 
-                        );
+                        if(context.mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            verifyEmailRoute, 
+                            (route) => false 
+                          );
+                        }
                       }
                     } on UserNotFoundAuthException {
-                      await showErrorDialog(context, 'User not found');
+                      if(context.mounted) await showErrorDialog(context, 'User not found');
                     } on WrongPasswordAuthException {
-                      await showErrorDialog(context, 'Invalid Credentials');
+                      if(context.mounted) await showErrorDialog(context, 'Invalid Credentials');
                     } on GenericAuthException  {
-                      await showErrorDialog(context, 'Authentication Error');
+                      if(context.mounted) await showErrorDialog(context, 'Authentication Error');
                     }
                   }, 
                   child: const Text('Login'),
