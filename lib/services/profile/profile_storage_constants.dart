@@ -5,6 +5,8 @@ const genderFieldName = 'gender';
 const heightFieldName = 'height';
 const weightFieldName = 'weight';
 
+const isMuteFieldName = 'isMute';
+
 const historyFieldName = 'history';
 const habitsFieldName = 'habits';
 

@@ -1,7 +1,9 @@
 import 'package:autismcompanionsupport/constants/routes.dart';
 import 'package:autismcompanionsupport/enum/menu_action.dart';
 import 'package:autismcompanionsupport/services/auth/auth_service.dart';
+import 'package:autismcompanionsupport/views/diagnosis/diagnosis_view.dart';
 import 'package:autismcompanionsupport/views/profile/profile_view.dart';
+import 'package:autismcompanionsupport/widgets/bold_text.dart';
 import 'package:flutter/material.dart';
 
 class DashboardView extends StatefulWidget {
@@ -14,10 +16,9 @@ class DashboardView extends StatefulWidget {
 class _DashboardView extends State<DashboardView> {
 
   int _selectedIndex = 0;
-  S
+  String _appBarTitle = "Profile";
 
-  static const TextStyle optionStyle =
-      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
+  static const TextStyle optionStyle = TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
   static const List<Widget> _widgetOptions = <Widget>[
     ProfileView(),
     Text(
@@ -28,21 +29,28 @@ class _DashboardView extends State<DashboardView> {
       'Index 2: Intervention',
       style: optionStyle,
     ),
-    Text(
-      'Index 3: Diagnosis',
-      style: optionStyle,
-    ),
+    DiagnosisView(),
   ];
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-    });
-  }
-
-  void headerName(String name) {
-    setstate(() {
-      _appBarTitle = name;
+      switch (_selectedIndex) {
+        case 0:
+          _appBarTitle = 'Profile';
+          break;
+        case 1:
+          _appBarTitle = 'Home';
+          break;
+        case 2:
+          _appBarTitle = 'Intervention';
+          break;
+        case 3:
+          _appBarTitle = 'Diagnosis';
+          break;
+        default:
+          _appBarTitle = 'Autism Companion';
+      }
     });
   }
 
@@ -50,7 +58,8 @@ class _DashboardView extends State<DashboardView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Autism Companion'),
+        title: BoldText(text: _appBarTitle,),
+        backgroundColor: const Color.fromARGB(255, 246, 179, 62),
         actions: [
           PopupMenuButton<MenuAction>(
             onSelected: (value) async {
@@ -69,24 +78,10 @@ class _DashboardView extends State<DashboardView> {
                     return;
                   }
                   break;
-                case MenuAction.profile:
-                  Navigator.of(context).pushNamed(profileRoute);
-                  break;
-                case MenuAction.diagnosis:
-                  Navigator.of(context).pushNamed(diagnosisRoute);
-                  break;
               }
             },
             itemBuilder: (context) {
               return const [
-                PopupMenuItem<MenuAction>(
-                  value: MenuAction.profile, 
-                  child: Text('Profile'),
-                ),
-                PopupMenuItem<MenuAction>(
-                  value: MenuAction.diagnosis, 
-                  child: Text('Diagnosis'),
-                ),
                 PopupMenuItem<MenuAction>(
                   value: MenuAction.logout, 
                   child: Text('Logout'),
@@ -119,7 +114,8 @@ class _DashboardView extends State<DashboardView> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: const Color.fromARGB(255, 247, 180, 63),
+        unselectedItemColor: const Color(0xFF1D2C33),
         onTap: _onItemTapped,
       ),
     );

@@ -2,6 +2,10 @@ import 'package:autismcompanionsupport/constants/routes.dart';
 import 'package:autismcompanionsupport/services/auth/auth_exceptions.dart';
 import 'package:autismcompanionsupport/services/auth/auth_service.dart';
 import 'package:autismcompanionsupport/utilities/show_error_dialog.dart';
+import 'package:autismcompanionsupport/widgets/bold_text.dart';
+import 'package:autismcompanionsupport/widgets/custom_text_button.dart';
+import 'package:autismcompanionsupport/widgets/input_field.dart';
+import 'package:autismcompanionsupport/widgets/light_text.dart';
 import 'package:flutter/material.dart';
 
 class RegisterView extends StatefulWidget {
@@ -29,55 +33,57 @@ class _RegisterViewState extends State<RegisterView> {
     super.dispose();
   }
 
+  void _register(BuildContext context) async {
+    final email = _email.text;
+    final password = _password.text;
+    try {
+      await AuthService.firebase().createUser(
+        email: email, 
+        password: password
+      );
+      AuthService.firebase().sendEmailVerification();
+      if(context.mounted) Navigator.of(context).pushNamed(verifyEmailRoute);
+    } on EmailAlreadyInUseAuthException {
+      if(context.mounted) await showErrorDialog(context, 'Email is already in use');
+    } on InvalidEmailAuthException {
+      if(context.mounted) await showErrorDialog(context, 'Invalid email entered');
+    } on WeakPasswordAuthException {
+      if(context.mounted) await showErrorDialog(context, 'Weak password');
+    } on GenericAuthException {
+      if(context.mounted) await showErrorDialog(context, 'Failed to Register');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
       body: Column (
-              children: [ 
-                TextField(
+        children: [ 
+          Image.asset("assets/images/shape8.png"),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Center(child: BoldText(text: "Register")),
+                const SizedBox(height: 15),
+                InputField(
+                  placeholder: 'Enter your email here', 
+                  icon: Icons.email_outlined, 
                   controller: _email,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your email here',
-                  ),
+                  type: TextInputType.emailAddress,
                 ),
-                TextField(
+                const SizedBox(height: 20),
+                InputField(
+                  placeholder: "Enter your password here", 
+                  icon: Icons.lock_outline, 
                   controller: _password,
-                  obscureText: true,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your password here',
-                  ),
+                  isProtected: true,
                 ),
-                TextButton(
-                  onPressed: () async {
-                    final email = _email.text;
-                    final password = _password.text;
-                    try {
-                      await AuthService.firebase().createUser(
-                        email: email, 
-                        password: password
-                      );
-                      AuthService.firebase().sendEmailVerification();
-                      if(context.mounted) Navigator.of(context).pushNamed(verifyEmailRoute);
-                    } on EmailAlreadyInUseAuthException {
-                      if(context.mounted) await showErrorDialog(context, 'Email is already in use');
-                    } on InvalidEmailAuthException {
-                      if(context.mounted) await showErrorDialog(context, 'Invalid email entered');
-                    } on WeakPasswordAuthException {
-                      if(context.mounted) await showErrorDialog(context, 'Weak password');
-                    } on GenericAuthException {
-                      if(context.mounted) await showErrorDialog(context, 'Failed to Register');
-                    }
-                  }, 
-                  child: const Text('Register'),
-                ),
+                const SizedBox(height: 20),
+                CustomTextButton(text: "Register", onPressed: () => _register(context)),
+                const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pushNamedAndRemoveUntil(
@@ -85,10 +91,22 @@ class _RegisterViewState extends State<RegisterView> {
                       (route) => false
                     );
                   },
-                  child: const Text('Already registered? Login here!'),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      LightText(text: "Already registered?"),
+                      SizedBox(width: 3),
+                      BoldText(text: "Login here!", size: 15),
+                    ],
+                  ),
                 ),
               ],
             ),
+          ),
+          const Spacer(),
+          Image.asset("assets/images/shape9.png"),
+        ],
+      ),
     );
   }
 }
