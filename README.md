@@ -1,2 +1,2 @@
-# autismcompanionsupport
+# Autismcompanionsupport
 Autism Support Companion App
