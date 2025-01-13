@@ -9,12 +9,13 @@ class UserProfile {
   final String name;
   final int age;
   final String gender;
-  final int height;
-  final int weight;
+  final double height;
+  final double weight;
   final bool isMute;
-  final Map<String, String> history;
-  final Map<String, String> habits;
+  final Map<String, dynamic> history;
+  final Map<String, dynamic> habits;
   final String profileAvatar;
+  final String bmiResult;
 
   const UserProfile({
     required this.documentId,
@@ -28,6 +29,7 @@ class UserProfile {
     required this.history,
     required this.habits,
     required this.profileAvatar,
+    required this.bmiResult,
   });
 
   UserProfile.fromSnapshot(QueryDocumentSnapshot<Map<String, dynamic>> snapshot)
@@ -36,12 +38,13 @@ class UserProfile {
         name = snapshot.data()[nameFieldName] as String,
         age = snapshot.data()[ageFieldName] as int,
         gender = snapshot.data()[genderFieldName] as String,
-        height = snapshot.data()[heightFieldName] as int,
-        weight = snapshot.data()[weightFieldName] as int,
+        height = snapshot.data()[heightFieldName] as double,
+        weight = snapshot.data()[weightFieldName] as double,
         isMute = snapshot.data()[isMuteFieldName] as bool,
-        history = snapshot.data()[historyFieldName] as Map<String, String>,
-        habits = snapshot.data()[habitsFieldName] as Map<String, String>,
-        profileAvatar = snapshot.data()[profileAvatarFieldName] as String;
+        history = snapshot.data()[historyFieldName] as Map<String, dynamic>,
+        habits = snapshot.data()[habitsFieldName] as Map<String, dynamic>,
+        profileAvatar = snapshot.data()[profileAvatarFieldName] as String,
+        bmiResult = snapshot.data()[bmiFieldName] as String;
 
   UserProfile.fromDocumentSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
       : documentId = snapshot.id,
@@ -52,9 +55,10 @@ class UserProfile {
         height = snapshot.data()![heightFieldName] ?? 0,
         weight = snapshot.data()![weightFieldName] ?? 0,
         isMute = snapshot.data()![isMuteFieldName] ?? false,
-        history = Map<String, String>.from(snapshot.data()?[historyFieldName] ?? {}),
-        habits = Map<String, String>.from(snapshot.data()?[habitsFieldName] ?? {}),
-        profileAvatar = snapshot.data()?[profileAvatarFieldName] ?? "";
+        history = Map<String, dynamic>.from(snapshot.data()?[historyFieldName] ?? {}),
+        habits = Map<String, dynamic>.from(snapshot.data()?[habitsFieldName] ?? {}),
+        profileAvatar = snapshot.data()?[profileAvatarFieldName] ?? "",
+        bmiResult = snapshot.data()?[bmiFieldName] ?? "";
 }
 
 

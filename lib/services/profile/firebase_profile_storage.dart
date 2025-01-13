@@ -18,6 +18,18 @@ class FirebaseProfileStorage {
     }
   }
 
+  Future<bool?> isUserMute ({
+    required String ownerUserId
+  }) async {
+    try {
+      return await profile.doc("profile")
+        .get()
+        .then((value) => value.exists ? UserProfile.fromDocumentSnapshot(value).isMute : null );
+    } catch (_) {
+      throw CouldNotGetMuteStatusException();
+    }
+  }
+
   Future<void> deleteProfile({
     required String documentId
   }) async {
@@ -33,12 +45,13 @@ class FirebaseProfileStorage {
     required String name,
     required int age,
     required String gender,
-    required int height,
-    required int weight,
+    required double height,
+    required double weight,
     required bool isMute,
-    required Map<String, String> history,
-    required Map<String, String> habits,
+    required Map<String, dynamic> history,
+    required Map<String, dynamic> habits,
     required String profileAvatar,
+    required String bmiResult,
   }) async {
     try {
       await profile.doc(documentId).update({
@@ -51,6 +64,7 @@ class FirebaseProfileStorage {
         'history': history,
         'habits': habits,
         profileAvatarFieldName: profileAvatar,
+        bmiFieldName: bmiResult,
       });
     } catch (_) {
       throw CouldNotUpdateProfileException();
@@ -62,12 +76,13 @@ class FirebaseProfileStorage {
     required String name,
     required int age,
     required String gender,
-    required int height,
-    required int weight,
+    required double height,
+    required double weight,
     required bool isMute,
-    required Map<String, String> history,
-    required Map<String, String> habits,
+    required Map<String, dynamic> history,
+    required Map<String, dynamic> habits,
     required String profileAvatar,
+    required String bmi,
   }) async {
     await profile.doc("profile").set({
       ownerUserIdFieldName: ownerUserId,
@@ -80,6 +95,7 @@ class FirebaseProfileStorage {
       'history': history,
       'habits': habits,
       profileAvatarFieldName: profileAvatar,
+      bmiFieldName : bmi,
     }, SetOptions(merge: true));
   }
 

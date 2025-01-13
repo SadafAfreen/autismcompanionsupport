@@ -1,317 +1,228 @@
 import 'dart:io';
 
 import 'package:autismcompanionsupport/constants/app_colors.dart';
-import 'package:autismcompanionsupport/utilities/utils.dart';
-import 'package:autismcompanionsupport/widgets/custom_text_button.dart';
-import 'package:autismcompanionsupport/widgets/input_field.dart';
-import 'package:autismcompanionsupport/widgets/light_text.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:autismcompanionsupport/constants/routes.dart';
 import 'package:autismcompanionsupport/services/auth/auth_service.dart';
-import 'package:autismcompanionsupport/services/profile/user_profile.dart';
-import 'package:autismcompanionsupport/services/profile/profile_storage_constants.dart';
 import 'package:autismcompanionsupport/services/profile/firebase_profile_storage.dart';
+import 'package:autismcompanionsupport/services/profile/user_profile.dart';
+import 'package:autismcompanionsupport/utilities/utils.dart';
+import 'package:autismcompanionsupport/widgets/bold_text.dart';
+import 'package:autismcompanionsupport/widgets/light_text.dart';
 import 'package:flutter/material.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
   @override
-  State<ProfileView> createState() => _ProfileView();
+  State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileView extends State<ProfileView>{
+class _ProfileViewState extends State<ProfileView> {
   UserProfile? _profile;
   late final FirebaseProfileStorage _profileService;
 
-  late final TextEditingController _nameController;
-  late final TextEditingController _ageController;
-  late final TextEditingController _genderController;
-  late final TextEditingController _heightController;
-  late final TextEditingController _weightController;
-  late final ValueNotifier<bool> _isMuteController;
-  late final TextEditingController _burnoutsController;
-  late final TextEditingController _eventsController;
-  late final TextEditingController _retentionsController;
-  late final TextEditingController _morningHabitsController;
-  late final TextEditingController _afternoonHabitsController;
-  late final TextEditingController _eveningHabitsController;
-  late final TextEditingController _nightHabitsController;
-  late final TextEditingController _noonHabitsController;
-  late final TextEditingController _photoController;
-
   @override
   void initState() {
-    _profileService = FirebaseProfileStorage();
-
-    _nameController = TextEditingController();
-    _ageController = TextEditingController();
-    _genderController = TextEditingController();
-    _heightController = TextEditingController();
-    _weightController = TextEditingController();
-    _isMuteController = ValueNotifier<bool>(false);
-    _burnoutsController = TextEditingController();
-    _eventsController = TextEditingController();
-    _retentionsController = TextEditingController();
-    _morningHabitsController = TextEditingController();
-    _afternoonHabitsController = TextEditingController();
-    _eveningHabitsController = TextEditingController();
-    _nightHabitsController = TextEditingController();
-    _noonHabitsController = TextEditingController();
-    _photoController = TextEditingController();
-
     super.initState();
-    _loadProfileData();
+    _profileService = FirebaseProfileStorage();
   }
-
-  
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _ageController.dispose();
-    _genderController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
-    _isMuteController.dispose();
-    _burnoutsController.dispose();
-    _eventsController.dispose();
-    _retentionsController.dispose();
-    _morningHabitsController.dispose();
-    _afternoonHabitsController.dispose();
-    _eveningHabitsController.dispose();
-    _nightHabitsController.dispose();
-    _noonHabitsController.dispose();
-    _photoController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _createOrGetProfile() async {
-    try {
-      final currentUser = AuthService.firebase().currentUser!;
-      await _profileService.createProfile(
-        ownerUserId: currentUser.id,
-        name: _nameController.text,
-        age: int.parse(_ageController.text),
-        gender: _genderController.text,
-        height: int.parse(_heightController.text),
-        weight: int.parse(_weightController.text),
-        isMute: _isMuteController.value,
-        history: {
-          'burnouts': _burnoutsController.text,
-          'events': _eventsController.text,
-          'retentions': _retentionsController.text,
-        },
-        habits: {
-          'morning': _morningHabitsController.text,
-          'afternoon': _afternoonHabitsController.text,
-          'evening': _eveningHabitsController.text,
-          'night': _nightHabitsController.text,
-          'noon': _noonHabitsController.text,
-        },
-        profileAvatar: _photoController.text,
-      );
-      if(context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
-        );
-      }
-    } catch (_) {
-      //if(context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save profile. Try Again.')),
-        );
-      //}
-    }
+  didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadProfileData();
   }
 
   Future<void> _loadProfileData() async {
     final currentUser = AuthService.firebase().currentUser!;
     final profile = await _profileService.getProfile(ownerUserId: currentUser.id);
-    if(profile != null) {
+    if(profile != null && mounted) {
       setState(() {
         _profile = profile;
-        _nameController.text = profile.name;
-        _ageController.text = profile.age.toString();
-        _genderController.text = profile.gender;
-        _heightController.text = profile.height.toString();
-        _weightController.text = profile.weight.toString(); 
-        _isMuteController.value = profile.isMute;
-        _photoController.text =  profile.profileAvatar.toString();
-        _burnoutsController.text = profile.history[burnoutsHistoryFieldName].toString();
-        _eventsController.text = profile.history[eventsHistoryFieldName].toString();
-        _retentionsController.text = profile.history[retentionsHistoryFieldName].toString();
-        _morningHabitsController.text = profile.habits[morningHabitsFieldName].toString();
-        _afternoonHabitsController.text = profile.habits[afternoonHabitsFieldName].toString();
-        _eveningHabitsController.text = profile.habits[eveningHabitsFieldName].toString();
-        _nightHabitsController.text = profile.habits[nightHabitsFieldName].toString();
-        _noonHabitsController.text = profile.habits[noonHabitsFieldName].toString();
+       // log(_profile.toString());
       });
     }
+  }
+
+  ImageProvider _getImageProvider(String? imagePath) {
+    if (imagePath != null) {
+      if (imagePath.startsWith('http') || imagePath.startsWith('https')) {
+        return NetworkImage(imagePath);
+      } else {
+        return FileImage(File(imagePath));
+      }
+    }       
     
-  
+    return const AssetImage('assets/images/default_avatar.png');
   }
-
-  void _selectImage() async {
-    final Map<String, dynamic>? result = await pickImage(ImageSource.gallery);
-
-    if (result != null) {
-      final String imagePath = result['path'];
-
-      setState(() {
-        _photoController.text = imagePath; 
-      });
-    }
-  }
-
-  final WidgetStateProperty<Color?> trackColor = 
-      WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
-        if(states.contains(WidgetState.selected)) {
-          return AppColors.primaryColor;
-        }
-        return null;
-      });
-
-  final WidgetStateProperty<Color?> overlayColor = 
-      WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
-        if(states.contains(WidgetState.selected)) {
-          return AppColors.primaryColor.withOpacity(0.54);
-        }
-        if(states.contains(WidgetState.disabled)) {
-          return AppColors.textFieldWhite;
-        }
-        return null;
-      });
 
   @override
   Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        _listWidget(),
+        _editFloatingButton(),
+      ]
+    );
+  }
+
+  Widget _listWidget() {
     return ListView(
-            padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        Container(
+          width: 120, // 2 * radius (60 * 2)
+          height: 120, // 2 * radius (60 * 2)
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(
+              image: _getImageProvider(_profile?.profileAvatar),
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        BoldText(
+          text: _profile?.name != null ? (_profile?.name).toString() : "Child Name", 
+          size: 16,
+          align: TextAlign.center,
+        ),
+        customDivider(),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GestureDetector(
-                onTap: _selectImage,
-                child: Container(
-                  width: 120, // 2 * radius (60 * 2)
-                  height: 120, // 2 * radius (60 * 2)
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: _photoController.text.isNotEmpty 
-                          ? FileImage(File(_photoController.text)) 
-                          : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              InputField(placeholder: "Child Name", controller: _nameController,),
-              const SizedBox(height: 20),
-              InputField(placeholder: "Child Age", controller: _ageController, type: TextInputType.number),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: _genderController.text.isEmpty ? null : _genderController.text,
-                decoration: const InputDecoration(
-                  labelText: 'Gender',
-                ),
-                items: ['Male', 'Female'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  _genderController.text = newValue ?? '';
-                },
+              Row(
+                children: [
+                  const BoldText( text: "Age: ", size: 12,),
+                  const SizedBox(width: 5,),
+                  LightText(text: "${_profile?.age}", size: 12,)
+                ],
               ),
               const SizedBox(height: 20),
               Row(
                 children: [
-                  const LightText(text: "Is child Mute?"),
+                  const BoldText(text: "Gender: ", size: 12,),
                   const SizedBox(width: 5,),
-                  Switch(
-                    value: _isMuteController.value,
-                    overlayColor: overlayColor,
-                    trackColor: trackColor,
-                    thumbColor: const WidgetStatePropertyAll<Color>(Colors.black),
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isMuteController.value = value;
-                      });
-                    },
-                  ),
+                  LightText(text: "${_profile?.gender}", size: 12,)
                 ],
               ),
               const SizedBox(height: 20),
-              InputField(placeholder: "Height (in inches)", controller: _heightController, type: TextInputType.number),
-              const SizedBox(height: 20),
-              InputField(placeholder: "Weight (in kg)", controller: _weightController, type: TextInputType.number),
-              const SizedBox(height: 20),
-              ExpansionTile(
-                title: const Text('History'),
+              Row(
                 children: [
-                  TextField(
-                    controller: _burnoutsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Burnouts',
-                    ),
-                  ),
-                  TextField(
-                    controller: _eventsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Events',
-                    ),
-                  ),
-                  TextField(
-                    controller: _retentionsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Retentions',
-                    ),
-                  ),
+                  const BoldText(text: "Is Child Mute: ", size: 12,),
+                  const SizedBox(width: 5,),
+                  LightText(text: "${_profile != null ? _profile!.isMute ? 'Yes' : 'No' : null}", size: 12,)
                 ],
-              ),
+              ), 
               const SizedBox(height: 20),
-              ExpansionTile(
-                title: const Text('Habits'),
+              Row(
                 children: [
-                  TextField(
-                    controller: _morningHabitsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Morning',
-                    ),
-                  ),
-                  TextField(
-                    controller: _noonHabitsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Noon',
-                    ),
-                  ),
-                  TextField(
-                    controller: _afternoonHabitsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Afternoon',
-                    ),
-                  ),
-                  TextField(
-                    controller: _eveningHabitsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Evening',
-                    ),
-                  ),
-                  TextField(
-                    controller: _nightHabitsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Night',
-                    ),
-                  ),
+                  const BoldText(text: "Height (in cm): ", size: 12,),
+                  const SizedBox(width: 5,),
+                  LightText(text: "${_profile?.height}", size: 12,)
                 ],
-              ),
+              ),  
               const SizedBox(height: 20),
-              CustomTextButton(
-                text: "Save", 
-                onPressed: _createOrGetProfile,
-              )
+              Row(
+                children: [
+                  const BoldText(text: "Weight (in kg): ", size: 12,),
+                  const SizedBox(width: 5,),
+                  LightText(text: "${_profile?.weight}", size: 12,)
+                ],
+              ), 
             ],
-          );
-    
+          ),
+        ),
+        customDivider(),
+        buildExpansionSection("History", _profile?.history),
+        const SizedBox(height: 20),
+        buildExpansionSection("Habits", _profile?.habits),
+      ],
+    );
   }
+
+  Widget buildExpansionSection(String title, Map<String, dynamic>? data) {
+    return ExpansionTile(
+      title: Text(title),
+      children: _buildExpansionTilesFromData(data),
+    );
+  }
+
+  List<Widget> _buildExpansionTilesFromData(data) {
+    if (data == null || data.isEmpty) {
+      return [const Text("No data available")];
+    }
+
+    List<Widget> expansionTiles = [];
+    
+    data.forEach((category, items) {
+      expansionTiles.add(
+        ExpansionTile(
+          title: BoldText(
+            text: category, 
+            size: 12.5, 
+            color: items.isEmpty 
+              ? AppColors.primaryColor.withOpacity(0.5) 
+              : AppColors.primaryColor, 
+          ),
+          iconColor: AppColors.primaryColor, 
+          collapsedIconColor: AppColors.primaryColor, 
+          trailing: items.isEmpty 
+            ? null 
+            : const Icon(
+                Icons.arrow_drop_down,
+                color: AppColors.primaryColor,
+                size: 24.0,
+              ),
+
+          children: _buildItemExpansionTiles(items),
+        ),
+      );
+    });
+
+    return expansionTiles;
+  }
+
+  List<Widget> _buildItemExpansionTiles(List<dynamic> items) {
+    List<Widget> itemTiles = [];
+    
+    for (var item in items) {
+      itemTiles.add(
+        ExpansionTile(
+          title: LightText(text: item.keys.first, size: 12, color: AppColors.textColorBlack), 
+          children: (item.values.first as List<dynamic>).map((subItem) {
+            return ListTile(
+              title: LightText(text: subItem, size: 12), 
+            );
+          }).toList(),
+        ),
+      );
+    }
+
+    return itemTiles;
+  }
+
+
+  Widget _editFloatingButton() {
+      return Align(
+        alignment: Alignment.bottomRight,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 32.0, bottom: 32.0),
+          child: FloatingActionButton(
+            onPressed: () async {
+              await Navigator.of(context).pushNamed(
+                editProfileRoute,
+                arguments: _profile,
+              );
+              await _loadProfileData();
+            },
+            backgroundColor: AppColors.primaryColor,
+            tooltip: 'Edit Profile',
+            child: const Icon(Icons.edit),
+          ),
+        ),
+      );
+    }
 }

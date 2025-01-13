@@ -9,3 +9,5 @@ class CouldNotUpdateProfileException extends ProfileStorageException {}
 class CouldNotGetProfileException extends ProfileStorageException {}
 
 class CouldNotDeleteProfileException extends ProfileStorageException {}
+
+class CouldNotGetMuteStatusException extends ProfileStorageException {}

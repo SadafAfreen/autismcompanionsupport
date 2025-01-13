@@ -1,4 +1,10 @@
 import 'package:autismcompanionsupport/constants/app_colors.dart';
+import 'package:autismcompanionsupport/constants/questions.dart';
+import 'package:autismcompanionsupport/constants/routes.dart';
+import 'package:autismcompanionsupport/services/auth/auth_service.dart';
+import 'package:autismcompanionsupport/services/diagnosis/firebase_diagnosis_stats.dart';
+import 'package:autismcompanionsupport/services/profile/firebase_profile_storage.dart';
+import 'package:autismcompanionsupport/services/profile/profile_storage_constants.dart';
 import 'package:autismcompanionsupport/views/diagnosis/question_model.dart';
 import 'package:autismcompanionsupport/widgets/bold_text.dart';
 import 'package:autismcompanionsupport/widgets/container.dart';
@@ -13,15 +19,80 @@ class FormView extends StatefulWidget {
 }
 
 class _FormView extends State<FormView> {
-  List<Question> questionList = getQuestions(0);
-  int currentQuestionIndex = 0;
+  
+  late final FirebaseProfileStorage _profileService;
+  late final FirebaseDiagnosisStats _diagnosisService;
+
+  late final String _currentUserId;
+
+  bool? _isMute;
+  List<Question>? questionList;
+  int? currentQuestionIndex;
+  Map<String, dynamic>? _diagnosis;
+  String? _currentTitle;
+
+  @override
+  initState() {
+    super.initState();
+    _profileService = FirebaseProfileStorage();
+    _diagnosisService = FirebaseDiagnosisStats();
+
+    final currentUser = AuthService.firebase().currentUser!;
+
+    setState(() {
+      _currentUserId = currentUser.id;
+    });
+  
+    _diagnosis = {};
+    //"category" : { rawScore, subScaledScore, percentileScore}
+
+    currentQuestionIndex = 0;
+    
+    if(mounted) _loadMuteStatusAndQuestions();
+  }
+
+  Future<void> _loadMuteStatusAndQuestions() async {
+    _isMute = await _fetchMuteStatusFromFirebase() ?? true; 
+    Future.delayed(const Duration(milliseconds: 10)); 
+
+    setState(() {
+      questionList = getQuestions(_isMute); 
+      _currentTitle = "Restricted Repetitive Behavior"; 
+    });
+  }
+
+  Future<bool?> _fetchMuteStatusFromFirebase() async {
+    return await _profileService.isUserMute(ownerUserId: _currentUserId);
+  }
+
+  void _updateTitle(String key) {
+    setState(() {
+      _currentTitle = key.replaceAll("_", " "); 
+    });
+  }
+
+  String getCurrentKey() {
+    int questionCount = 0;
+
+    for (var entry in questions.entries) {
+      final key = entry.key;
+      final value = entry.value; 
+
+      if (currentQuestionIndex! < questionCount + value.length) {
+        return key;
+      }
+
+      questionCount += value.length;
+    }
+    return "";
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const BoldText(
-          text: "Restricted Repetitive Behavior", 
+        title: BoldText(
+          text: _currentTitle ?? "Autism Companion",
           size: 15,
         ),
       ),
@@ -32,21 +103,25 @@ class _FormView extends State<FormView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             LightText(
-              text: "Question ${currentQuestionIndex + 1}/${questionList.length.toString()}", 
+              text: "Question ${currentQuestionIndex! + 1}/${questionList?.length.toString()}", 
               color: AppColors.primaryColor,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 220,
-              child: CustomContainer(
-                fileName: "shape2.png",
-                child: Padding(
-                  padding: const EdgeInsets.all(30.0),
-                  child: LightText(
-                    text: questionList[currentQuestionIndex].questionText,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 100),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: const Offset(0, 0),  
+                    ).animate(animation),
+                    child: child,
                   ),
-                ),
-              ),
+                );
+              },
+              child: _questionWidget(key: ValueKey<int>(currentQuestionIndex!)),
             ),
             const SizedBox(height: 50),
             _answerList(),
@@ -57,24 +132,37 @@ class _FormView extends State<FormView> {
     );
   }
 
+  Widget _questionWidget({required Key key}) {
+    return SizedBox(
+      height: 220,
+      child: CustomContainer(
+        fileName: "shape2.png",
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: LightText(
+            text: questionList != null ? questionList!.isNotEmpty ? questionList![currentQuestionIndex!].questionText : "Loading...": "Loading...",
+          ),
+        ),
+      ),
+    );
+  }
+
   _answerList() {
     return Column(
       children: [
-        _answerButton("Not at all like the individual"),
-        _answerButton("Not much like the individual"),
-        _answerButton("Somewhat like the individual"),
-        _answerButton("Very much like the individual"),
+        _answerButton("Not at all like the individual", 0),
+        _answerButton("Not much like the individual", 1),
+        _answerButton("Somewhat like the individual", 2),
+        _answerButton("Very much like the individual", 3),
       ],
     );
   }
 
-  Widget _answerButton(String text) {
+  Widget _answerButton(String text, int optionIndex) {
     return CustomContainer(
-      //width: double.infinity,
       margin: 5,
-      //height: 58,
       child: ElevatedButton(
-        onPressed: _handleSelectedAnswer,
+        onPressed: () => _recordUserSelection(optionIndex),
         style: ElevatedButton.styleFrom(
           shape: const StadiumBorder(),
         ), 
@@ -83,10 +171,50 @@ class _FormView extends State<FormView> {
     );
   }
 
-  _handleSelectedAnswer() {
-    bool isLastQuestion = currentQuestionIndex == questionList.length - 1;
-    if(!isLastQuestion) {
-      setState(() => currentQuestionIndex++ );
+  _recordUserSelection(int selectedOption) {
+    String key = getCurrentKey();
+    
+    if (_diagnosis!.containsKey(key)) {
+       _diagnosis![key][rawScoreFieldName] += selectedOption;
+    } else {
+      _diagnosis![key] = {
+        rawScoreFieldName: selectedOption,
+        subScaledScoreFieldName: 0,
+        percentileScoreFieldName: 0
+      };
+    }
+
+    //log("Current Raw Score for $key: ${_diagnosis![key][rawScoreFieldName]}");
+
+    if (currentQuestionIndex! < questionList!.length - 1) {
+      setState(() {
+        currentQuestionIndex = (currentQuestionIndex!) + 1;
+        _updateTitle(key);
+      });
+    } 
+    if (currentQuestionIndex! == questionList!.length - 1) {
+      _calculateDiagnosisScore(); 
+    }
+  }
+
+  void _calculateDiagnosisScore() async {
+    try {
+      _diagnosisService.uploadDiagnosisData(
+        ownerUserId: _currentUserId, 
+        diagnosisStats: _diagnosis!, 
+      );  
+      Future.delayed(const Duration(seconds: 1), () {
+        if(mounted) {
+          Navigator.of(context).pushNamed(
+            diagnosisResultRoute, 
+          );
+        }
+      });
+    } catch(error) {
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error uploading assessment score')),
+      );
     }
   }
 

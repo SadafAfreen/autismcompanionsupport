@@ -2,7 +2,6 @@ import 'package:autismcompanionsupport/constants/app_colors.dart';
 import 'package:autismcompanionsupport/constants/routes.dart';
 import 'package:autismcompanionsupport/widgets/bold_text.dart';
 import 'package:autismcompanionsupport/widgets/container.dart';
-import 'package:autismcompanionsupport/widgets/custom_text_button.dart';
 import 'package:autismcompanionsupport/widgets/light_text.dart';
 import 'package:flutter/material.dart';
 
@@ -120,11 +119,44 @@ class _DiagnosisView extends State<DiagnosisView> {
               ),
               Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    CustomTextButton(text: "Start Diagnosis", onPressed: () => Navigator.of(context).pushNamed(formRoute)),
-                  ],
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.0),
+                    color: Colors.grey[200],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Diagnosis",
+                        style: TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      
+                      Row(
+                        children: [
+                            FloatingActionButton(
+                              onPressed: () => Navigator.of(context).pushNamed(formRoute),
+                              heroTag: "Start Diagnosis",
+                              mini: true, 
+                              backgroundColor: AppColors.primaryColor,
+                              child: const Icon(Icons.add), 
+                            ),
+                            const SizedBox(width: 8.0), 
+                            FloatingActionButton(
+                              onPressed: () => Navigator.of(context).pushNamed(diagnosisResultRoute),
+                              heroTag: "View Diagnosis",
+                              mini: true, 
+                              backgroundColor: AppColors.primaryColor,
+                              child: const Icon(Icons.visibility), 
+                            ),
+                          ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
